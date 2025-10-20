@@ -10,8 +10,11 @@ echo "Directory, Number of Files, Size" > "$output_file"
 drilldown() {
     dir="$1"
 
-    # List immediate children (dirs and files)
-    hdfs dfs -ls "$dir" 2>/dev/null | awk '/^[dl-]/{print $NF}' | while IFS= read -r child; do
+    # List immediate children (dirs and files) into a temp file
+    tmpfile=$(mktemp)
+    hdfs dfs -ls "$dir" 2>/dev/null | awk '/^[dl-]/{print $NF}' > "$tmpfile"
+    
+    while IFS= read -r child; do
         # Ignore any path containing /.snapshot/
         case "$child" in
             */.snapshot/*) continue ;;
@@ -34,7 +37,9 @@ drilldown() {
         else
             echo "$path, $file_count, $size" >> "$output_file"
         fi
-    done
+    done < "$tmpfile"
+    
+    rm -f "$tmpfile"
 }
 
 # Validate input arguments
