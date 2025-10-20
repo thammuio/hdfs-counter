@@ -11,8 +11,7 @@ drilldown() {
     local subdirs=()
 
     # Get counts for immediate children
-    mapfile -t lines < <(hdfs dfs -count -q -h "$dir"/* 2>/dev/null)
-    for line in "${lines[@]}"; do
+    hdfs dfs -count -q -h "$dir"/* 2>/dev/null | while read -r line; do
         file_count=$(echo "$line" | awk '{print $6}' | tr -d ',')
         size=$(echo "$line" | awk '{print $7}')
         path=$(echo "$line" | awk '{print $NF}')
@@ -51,4 +50,5 @@ if [ $# -lt 1 ]; then
 fi
 
 drilldown "$1"
+echo "Output written to $output_file"
 echo "Output written to $output_file"
