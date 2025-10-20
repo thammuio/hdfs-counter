@@ -2,17 +2,18 @@
 
 # Accept file limit as a parameter, default to 5000000 if not provided
 MAX_FILES=${2:-5000000}
-printed_header=0
 output_file="hdfs_count_output.csv"
+
+# Print header once at the start
+echo "Directory, Number of Files, Size" > "$output_file"
 
 drilldown() {
     local dir="$1"
-    local has_large_subdir=0
 
     # List immediate children (dirs and files)
-    hdfs dfs -ls "$dir" 2>/dev/null | awk '{print $8}' | while read -r child; do
-        # Ignore .snapshot directories
-        [[ "$child" == */.snapshot ]] && continue
+    while read -r child; do
+        # Ignore any path containing /.snapshot/
+        [[ "$child" == *"/.snapshot/"* ]] && continue
         # Only process directories
         hdfs dfs -test -d "$child" || continue
 
@@ -24,21 +25,20 @@ drilldown() {
         [[ "$file_count" =~ ^[0-9]+$ ]] || continue
 
         if [ "$file_count" -gt "$MAX_FILES" ]; then
-            has_large_subdir=1
             drilldown "$child"
         else
-            # Print header only once
-            if [ $printed_header -eq 0 ]; then
-                echo "Directory, Number of Files, Size" > "$output_file"
-                printed_header=1
-            fi
             echo "$path, $file_count, $size" >> "$output_file"
         fi
-    done
+    done < <(hdfs dfs -ls "$dir" 2>/dev/null | awk '{print $8}')
 }
 
 if [ $# -lt 1 ]; then
     echo "Usage: $0 <hdfs_directory> [max_files]"
+    exit 1
+fi
+
+drilldown "$1"
+echo "Output written to $output_file"
     exit 1
 fi
 
