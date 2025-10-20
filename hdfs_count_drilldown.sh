@@ -8,29 +8,33 @@ output_file="hdfs_count_output.csv"
 echo "Directory, Number of Files, Size" > "$output_file"
 
 drilldown() {
-    local dir="$1"
+    dir="$1"
 
     # List immediate children (dirs and files)
-    while read -r child; do
+    hdfs dfs -ls "$dir" 2>/dev/null | awk '/^[dl-]/{print $NF}' | while IFS= read -r child; do
         # Ignore any path containing /.snapshot/
-        [[ "$child" == *"/.snapshot/"* ]] && continue
+        case "$child" in
+            */.snapshot/*) continue ;;
+        esac
         # Only process directories
         hdfs dfs -test -d "$child" || continue
 
         # Get file count for this child directory
-        line=$(hdfs dfs -count -q -h "$child" 2>/dev/null | tail -1)
+        line=$(hdfs dfs -count -q -h "$child" 2>/dev/null | tail -n 1)
         file_count=$(echo "$line" | awk '{print $6}' | tr -d ',')
         size=$(echo "$line" | awk '{print $7}')
         path=$(echo "$line" | awk '{print $NF}')
-        [[ "$file_count" =~ ^[0-9]+$ ]] || continue
+        # Ensure file_count is numeric
+        case "$file_count" in
+            ''|*[!0-9]*) continue ;;
+        esac
 
         if [ "$file_count" -gt "$MAX_FILES" ]; then
             drilldown "$child"
         else
             echo "$path, $file_count, $size" >> "$output_file"
         fi
-    # Only keep entry lines and print the path column robustly
-    done < <(hdfs dfs -ls "$dir" 2>/dev/null | awk '/^[dl-]/{print $NF}')
+    done
 }
 
 # Validate input arguments
