@@ -8,31 +8,37 @@ output_file="hdfs_count_output.csv"
 drilldown() {
     local dir="$1"
     local found_subdir=0
+    local subdirs=()
+
     # Get counts for immediate children
     mapfile -t lines < <(hdfs dfs -count -q -h "$dir"/* 2>/dev/null)
     for line in "${lines[@]}"; do
-        # Extract file count, size, and path
         file_count=$(echo "$line" | awk '{print $6}' | tr -d ',')
         size=$(echo "$line" | awk '{print $7}')
         path=$(echo "$line" | awk '{print $NF}')
-        # Skip if file_count is not a number
         [[ "$file_count" =~ ^[0-9]+$ ]] || continue
-        if [ "$file_count" -gt "$MAX_FILES" ]; then
-            found_subdir=1
-            drilldown "$path"
+        # Only consider directories (not files)
+        if hdfs dfs -test -d "$path"; then
+            if [ "$file_count" -gt "$MAX_FILES" ]; then
+                found_subdir=1
+                subdirs+=("$path")
+            fi
         fi
     done
 
-    # If no subdir was over MAX_FILES, print this dir's info
-    if [ $found_subdir -eq 0 ]; then
-        # Get this dir's count and size
+    if [ $found_subdir -eq 1 ]; then
+        for subdir in "${subdirs[@]}"; do
+            drilldown "$subdir"
+        done
+    else
+        # Print directory path, file count and size in GB/TB for the current dir
         line=$(hdfs dfs -count -q -h "$dir" 2>/dev/null | tail -1)
         file_count=$(echo "$line" | awk '{print $6}' | tr -d ',')
         size=$(echo "$line" | awk '{print $7}')
         path=$(echo "$line" | awk '{print $NF}')
         [[ "$file_count" =~ ^[0-9]+$ ]] || return
         if [ $printed_header -eq 0 ]; then
-            echo "Directory, Number of Files, Size in GB/TB" > "$output_file"
+            echo "Directory, Number of Files, Size" > "$output_file"
             printed_header=1
         fi
         echo "$path, $file_count, $size" >> "$output_file"
