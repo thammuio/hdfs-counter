@@ -29,7 +29,8 @@ drilldown() {
         else
             echo "$path, $file_count, $size" >> "$output_file"
         fi
-    done < <(hdfs dfs -ls "$dir" 2>/dev/null | awk '{print $8}')
+    # Only keep entry lines and print the path column robustly
+    done < <(hdfs dfs -ls "$dir" 2>/dev/null | awk '/^[dl-]/{print $NF}')
 }
 
 # Validate input arguments
