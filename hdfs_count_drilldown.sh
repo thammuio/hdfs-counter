@@ -32,26 +32,13 @@ drilldown() {
     done < <(hdfs dfs -ls "$dir" 2>/dev/null | awk '{print $8}')
 }
 
+# Validate input arguments
 if [ $# -lt 1 ]; then
     echo "Usage: $0 <hdfs_directory> [max_files]"
     exit 1
 fi
 
+# Start the recursive drilldown
 drilldown "$1"
-echo "Output written to $output_file"
-    exit 1
-fi
 
-drilldown "$1"
-echo "Output written to $output_file"
-        echo "$path, $file_count, $size" >> "$output_file"
-    fi
-}
-
-if [ $# -lt 1 ]; then
-    echo "Usage: $0 <hdfs_directory> [max_files]"
-    exit 1
-fi
-
-drilldown "$1"
 echo "Output written to $output_file"
