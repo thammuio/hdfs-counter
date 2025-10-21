@@ -10,6 +10,7 @@ SRC_FS="hdfs://${SRC_NN}:${SRC_PORT}"
 
 completed_distcp_tracker="distcp_tracker.csv"
 distcp_success_state_for_dir="distcp_state.txt"
+distcp_mismatch="distcp_mismatch.txt"
 
 export HADOOP_HEAPSIZE=8192
 
@@ -64,8 +65,8 @@ if [ "$distcp_status" -eq 0 ]; then
     if [ "$distcp_src_count" = "$distcp_target_count" ]; then
         echo "$picked_dir" >> "$distcp_success_state_for_dir"
     else
-        echo "Distcp succeeded but counts mismatch for $picked_dir (distcp_src_count=$distcp_src_count, distcp_target_count=$distcp_target_count). Will retry next run."
+        echo "Distcp succeeded but counts mismatch for $picked_dir (distcp_src_count=$distcp_src_count, distcp_target_count=$distcp_target_count). Will retry next run." >> "$distcp_mismatch"
     fi
 else
-    echo "Distcp failed for $picked_dir (status=$distcp_status). Will retry next run."
+    echo "Distcp failed for $picked_dir (status=$distcp_status). RERUN."
 fi
