@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Usage: hdfs_snapshot_and_distcp.sh <directory>
+# Usage: sh hdfs_snapshot_and_distcp.sh <directory>
 
 
 # --- Source HDFS (NameNode or HA logical nameservice) ---
@@ -25,9 +25,10 @@ picked_dir="$1"
 picked_file_count=""
 
 # Define snapshot name
+timestamp=$(date +%Y%m%d_%H%M%S)
 dir_clean=$(echo "$picked_dir" | sed 's:/*$::')
 last_two=$(echo "$dir_clean" | awk -F'/' '{print $(NF-1)"_"$NF}')
-snapshot_name="${last_two}_distcp_snapshot_$(date +%Y%m%d_%H%M%S)"
+snapshot_name="${last_two}_distcp_snapshot_${timestamp}"
 
 # Create snapshot
 echo "Creating snapshot for $picked_dir"
@@ -50,20 +51,21 @@ fi
 log_file="distcp_${last_two}_${snapshot_name}.log"
 
 echo "hadoop distcp -Dmapreduce.map.memory.mb=4096 -Dmapreduce.map.java.opts='-Xmx3072m -XX:+UseG1GC' -Dmapreduce.map.maxattempts=2 -Ddistcp.copy.threads=$threads -m $picked_mappers -skipcrccheck -strategy dynamic -update -delete -p ${SRC_FS}${distcp_src} $tgt 2>&1 | tee $log_file"
+
+
 hadoop distcp -Dmapreduce.map.memory.mb=4096 -Dmapreduce.map.java.opts='-Xmx3072m -XX:+UseG1GC' -Dmapreduce.map.maxattempts=2 -Ddistcp.copy.threads=3 -m "$picked_mappers" -skipcrccheck -strategy dynamic -update -delete -p "${SRC_FS}${distcp_src}" "$tgt" 2>&1 | tee "$log_file"
 distcp_status=$?
 
-distcp_src_count=$(hdfs dfs -count "${SRC_FS}${distcp_src}" 2>/dev/null | awk 'NR==1{print $2}')
-distcp_target_count=$(hdfs dfs -count "$tgt" 2>/dev/null | awk 'NR==1{print $2}')
-timestamp=$(date +%Y-%m-%dT%H:%M:%S)
 
-echo "$timestamp,$picked_dir,$picked_file_count,$snapshot_name,$distcp_status,$distcp_src_count,$distcp_target_count" >> "$completed_distcp_tracker"
-
-# Only mark as processed if distcp succeeded and counts match
-if [ "$distcp_status" -eq 0 ] && [ "$distcp_src_count" = "$distcp_target_count" ]; then
-    echo "$picked_dir" >> "$distcp_success_state_for_dir"
+if [ "$distcp_status" -eq 0 ]; then
+    distcp_src_count=$(hdfs dfs -count "${SRC_FS}${distcp_src}" 2>/dev/null | awk 'NR==1{print $2}')
+    distcp_target_count=$(hdfs dfs -count "$tgt" 2>/dev/null | awk 'NR==1{print $2}')
+    echo "$timestamp,$picked_dir,$picked_file_count,$snapshot_name,$distcp_status,$distcp_src_count,$distcp_target_count" >> "$completed_distcp_tracker"
+    if [ "$distcp_src_count" = "$distcp_target_count" ]; then
+        echo "$picked_dir" >> "$distcp_success_state_for_dir"
+    else
+        echo "Distcp succeeded but counts mismatch for $picked_dir (distcp_src_count=$distcp_src_count, distcp_target_count=$distcp_target_count). Will retry next run."
+    fi
 else
-    echo "Distcp failed or counts mismatch for $picked_dir (status=$distcp_status, distcp_src_count=$distcp_src_count, distcp_target_count=$distcp_target_count). Will retry next run."
-fi
-    echo "Distcp failed or counts mismatch for $picked_dir (status=$distcp_status, distcp_src_count=$distcp_src_count, distcp_target_count=$distcp_target_count). Will retry next run."
+    echo "Distcp failed for $picked_dir (status=$distcp_status). Will retry next run."
 fi
