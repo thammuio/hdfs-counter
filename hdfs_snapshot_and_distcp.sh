@@ -31,7 +31,7 @@ MIN_MAPPERS=10               # floor per job
 
 # Capacity guard using RM API:
 TOTAL_MAPPER_BUDGET=200      # your max allowed concurrent mappers for DistCp class
-MAX_DISTCP_APPS=3            # hard cap on concurrent DistCp jobs (apps) regardless of containers
+MAX_DISTCP_APPS=3          # hard cap on concurrent DistCp jobs (apps) regardless of containers
 
 # Snapshot retention on SOURCE (per directory)
 SNAPSHOT_RETAIN=5
@@ -321,7 +321,8 @@ if [[ "$distcp_status" -eq 0 ]]; then
   else
     echo "Warning: count mismatch (src=$distcp_src_count dst=$distcp_target_count)."
   fi
-  prune_old_snapshots "$picked_dir" "$SNAPSHOT_RETAIN"
+  # Don't prune snapshots immediately; wait for later runs
+  # prune_old_snapshots "$picked_dir" "$SNAPSHOT_RETAIN"
 else
   echo "DistCp failed for $picked_dir (status=$distcp_status). Will retry next run."
 fi
