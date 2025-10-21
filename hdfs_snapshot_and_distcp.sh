@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Usage: hdfs_snapshot_and_distcp.sh <directory>
+
 
 # --- Source HDFS (NameNode or HA logical nameservice) ---
 SRC_NN="odcsrcnn01.corp.oncor.com"
