@@ -8,9 +8,9 @@ SRC_NN="$1"
 SRC_PORT="8020"
 SRC_FS="hdfs://${SRC_NN}:${SRC_PORT}"
 
-completed_distcp_tracker="distcp_tracker.csv"
-distcp_success_state_for_dir="distcp_state.txt"
-distcp_mismatch="distcp_mismatch.txt"
+completed_distcp_tracker="stats/distcp_tracker.csv"
+distcp_success_state_for_dir="stats/distcp_state.txt"
+distcp_mismatch="stats/distcp_mismatch.txt"
 
 export HADOOP_HEAPSIZE=8192
 
@@ -51,10 +51,10 @@ fi
 
 log_file="distcp_${last_two}_${snapshot_name}.log"
 
-echo "hadoop distcp -Dmapreduce.map.memory.mb=4096 -Dmapreduce.map.java.opts='-Xmx3072m -XX:+UseG1GC' -Dmapreduce.map.maxattempts=2 -Ddistcp.copy.threads=$threads -m $picked_mappers -skipcrccheck -strategy dynamic -update -delete -p ${SRC_FS}${distcp_src} $tgt 2>&1 | tee $log_file"
+echo "hadoop distcp -Dmapreduce.map.memory.mb=4096 -Dmapreduce.map.java.opts='-Xmx3072m -XX:+UseG1GC' -Dmapreduce.map.maxattempts=2 -Ddistcp.copy.threads=$threads -m $picked_mappers -skipcrccheck -strategy dynamic -update -delete -p ${SRC_FS}${distcp_src} $tgt 2>&1 | tee logs/$log_file"
 
 
-hadoop distcp -Dmapreduce.map.memory.mb=4096 -Dmapreduce.map.java.opts='-Xmx3072m -XX:+UseG1GC' -Dmapreduce.map.maxattempts=2 -Ddistcp.copy.threads=3 -m "$picked_mappers" -skipcrccheck -strategy dynamic -update -delete -p "${SRC_FS}${distcp_src}" "$tgt" 2>&1 | tee "$log_file"
+hadoop distcp -Dmapreduce.map.memory.mb=4096 -Dmapreduce.map.java.opts='-Xmx3072m -XX:+UseG1GC' -Dmapreduce.map.maxattempts=2 -Ddistcp.copy.threads=3 -m "$picked_mappers" -skipcrccheck -strategy dynamic -update -delete -p "${SRC_FS}${distcp_src}" "$tgt" 2>&1 | tee "logs/$log_file"
 distcp_status=$?
 
 
