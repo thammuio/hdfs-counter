@@ -4,7 +4,7 @@
 
 
 # --- Source HDFS (NameNode or HA logical nameservice) ---
-SRC_NN="active.namenode.com"
+SRC_NN="$1"
 SRC_PORT="8020"
 SRC_FS="hdfs://${SRC_NN}:${SRC_PORT}"
 
@@ -22,7 +22,7 @@ if [ "$#" -ne 1 ]; then
     exit 1
 fi
 
-picked_dir="$1"
+picked_dir="$2"
 picked_file_count=""
 
 # Define snapshot name
