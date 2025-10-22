@@ -25,16 +25,11 @@ dir_clean=$(echo "$picked_dir" | sed 's:/*$::')
 last_two=$(echo "$dir_clean" | awk -F'/' '{print $(NF-1)"_"$NF}')
 new_snapshot="${last_two}_delta_snapshot_${timestamp}"
 # get old successful snapshot name from 
-log_file="distcp_${last_two}_${new_snapshot}.log"
+log_file="delta_distcp_${last_two}_${new_snapshot}.log"
 
 echo "Creating snapshot ${new_snapshot} for ${picked_dir}"
 hdfs dfsadmin -fs "$SRC_FS" -allowSnapshot "$picked_dir"
-hdfs dfs -fs "$SRC_FS" -createSnapshot "$picked_dir" "$new_snapshot" || { echo "Failed to create snapshot"; exit 2; }
-
-
-# Create Old Snapshot in Destination if it does not exist
-hdfs dfsadmin -allowSnapshot "$picked_dir"
-hdfs dfs -createSnapshot "$picked_dir" "$old_snapshot" || { echo "Failed to create snapshot"; exit 2; }
+hdfs dfs -fs "$SRC_FS" -createSnapshot "$picked_dir" "$new_snapshot" || { echo "Failed to create snapshot in Src"; exit 2; }
 
 
 hadoop distcp -update -diff "${old_snapshot}" "${new_snapshot}" "${SRC_FS}${picked_dir}" "$picked_dir" 2>&1 | tee "logs/$log_file"
