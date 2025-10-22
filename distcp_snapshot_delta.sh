@@ -14,9 +14,9 @@ base_snapshot="$3"
 distcp_success_state_for_dir="stats/distcp_state.txt"
 old_snapshot=$(grep "^${picked_dir}," "$distcp_success_state_for_dir" | tail -1 | awk -F',' '{print $2}')
 
-completed_distcp_tracker="stats/distcp_delta_tracker.csv"
-distcp_success_state_for_dir="stats/distcp_delta_state.txt"
-distcp_mismatch="stats/distcp_delta_mismatch.txt"
+completed_distcp_tracker="stats/delta_distcp_tracker.csv"
+distcp_success_state_for_dir="stats/delta_distcp_state.txt"
+distcp_mismatch="stats/delta_distcp_mismatch.txt"
 
 export HADOOP_HEAPSIZE=8192
 
@@ -27,7 +27,7 @@ new_snapshot="${last_two}_delta_snapshot_${timestamp}"
 # get old successful snapshot name from 
 log_file="delta_distcp_${last_two}_${new_snapshot}.log"
 
-echo "Creating snapshot ${new_snapshot} for ${picked_dir}"
+echo "Creating snapshot ${new_snapshot} for ${picked_dir} at src"
 hdfs dfsadmin -fs "$SRC_FS" -allowSnapshot "$picked_dir"
 hdfs dfs -fs "$SRC_FS" -createSnapshot "$picked_dir" "$new_snapshot" || { echo "Failed to create snapshot in Src"; exit 2; }
 
