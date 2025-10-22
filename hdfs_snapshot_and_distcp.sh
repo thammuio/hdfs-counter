@@ -64,7 +64,7 @@ if [ "$distcp_status" -eq 0 ]; then
     echo "$timestamp,$picked_dir,$picked_file_count,$snapshot_name,$distcp_status,$distcp_src_count,$distcp_target_count" >> "$completed_distcp_tracker"
     if [ "$distcp_src_count" = "$distcp_target_count" ]; then
         echo "$picked_dir, $snapshot_name, $timestamp" >> "$distcp_success_state_for_dir"
-        # Create snapshot
+        # Create snapshot on target
         echo "Creating snapshot on Target for $picked_dir Once the Job is Successful - used for delta distcp"
         hdfs dfsadmin -allowSnapshot "$picked_dir"
         hdfs dfs -createSnapshot "$picked_dir" "$snapshot_name" || { echo "Failed to create snapshot"; exit 2; }
