@@ -48,17 +48,5 @@ if [ "$distcp_status" -eq 0 ]; then
     fi
 else
     echo "$timestamp - Distcp failed for $picked_dir (status=$distcp_status). RERUN."
+    exit $distcp_status
 fi
-
-
-# record stats
-echo "$(date +%Y%m%d_%H%M%S),${picked_dir},${base_snapshot},${new_snapshot},${distcp_status}" >> stats/distcp_delta_tracker.csv
-
-if [ "$distcp_status" -eq 0 ]; then
-    echo "$(date +%Y%m%d_%H%M%S) - Delta distcp succeeded for ${picked_dir}" >> stats/distcp_delta_state.txt
-else
-    echo "$(date +%Y%m%d_%H%M%S) - Delta distcp failed for ${picked_dir} (status=${distcp_status}). See logs/$log_file" >> stats/distcp_delta_mismatch.txt
-fi
-
-
-exit $distcp_status

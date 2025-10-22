@@ -69,4 +69,5 @@ if [ "$distcp_status" -eq 0 ]; then
     fi
 else
     echo "$timestamp - Distcp failed for $picked_dir (status=$distcp_status). RERUN."
+    exit $distcp_status
 fi
