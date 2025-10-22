@@ -4,7 +4,7 @@
 
 
 # --- Source HDFS (NameNode or HA logical nameservice) ---
-SRC_NN="odcsrcnn01.corp.oncor.com"
+SRC_NN="active.namenode.com"
 SRC_PORT="8020"
 SRC_FS="hdfs://${SRC_NN}:${SRC_PORT}"
 
@@ -33,7 +33,7 @@ snapshot_name="${last_two}_distcp_snapshot_${timestamp}"
 
 # Create snapshot
 echo "Creating snapshot for $picked_dir"
-hdfs dfs -fs "$SRC_FS" -allowSnapshot "$picked_dir"
+hdfs dfsadmin -fs "$SRC_FS" -allowSnapshot "$picked_dir"
 hdfs dfs -fs "$SRC_FS" -createSnapshot "$picked_dir" "$snapshot_name"
 
 distcp_src="${picked_dir}/.snapshot/${snapshot_name}"
@@ -63,10 +63,10 @@ if [ "$distcp_status" -eq 0 ]; then
     distcp_target_count=$(hdfs dfs -count "$tgt" 2>/dev/null | awk 'NR==1{print $2}')
     echo "$timestamp,$picked_dir,$picked_file_count,$snapshot_name,$distcp_status,$distcp_src_count,$distcp_target_count" >> "$completed_distcp_tracker"
     if [ "$distcp_src_count" = "$distcp_target_count" ]; then
-        echo "$picked_dir" >> "$distcp_success_state_for_dir"
+        echo "$picked_dir, $snapshot_name, $timestamp" >> "$distcp_success_state_for_dir"
     else
-        echo "Distcp succeeded but counts mismatch for $picked_dir (distcp_src_count=$distcp_src_count, distcp_target_count=$distcp_target_count). Will retry next run." >> "$distcp_mismatch"
+        echo "$timestamp - Distcp succeeded but counts mismatch for $picked_dir (distcp_src_count=$distcp_src_count, distcp_target_count=$distcp_target_count). RERUN." >> "$distcp_mismatch"
     fi
 else
-    echo "Distcp failed for $picked_dir (status=$distcp_status). RERUN."
+    echo "$timestamp - Distcp failed for $picked_dir (status=$distcp_status). RERUN."
 fi
