@@ -17,8 +17,8 @@ export HADOOP_HEAPSIZE=8192
 # Remove the logic related to reading from the directory_list_sorted file and instead use a shell argument for the directory name.
 
 # Check if a directory argument is provided
-if [ "$#" -ne 1 ]; then
-    echo "Usage: $0 <directory>"
+if [ "$#" -ne 2 ]; then
+    echo "Usage: $0 <namenode> <directory>"
     exit 1
 fi
 
