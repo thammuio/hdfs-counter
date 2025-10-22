@@ -32,8 +32,12 @@ hdfs dfsadmin -fs "$SRC_FS" -allowSnapshot "$picked_dir"
 hdfs dfs -fs "$SRC_FS" -createSnapshot "$picked_dir" "$new_snapshot" || { echo "Failed to create snapshot"; exit 2; }
 
 
+# Create Old Snapshot in Destination if it does not exist
+hdfs dfsadmin -allowSnapshot "$picked_dir"
+hdfs dfs -createSnapshot "$picked_dir" "$old_snapshot" || { echo "Failed to create snapshot"; exit 2; }
 
-hadoop distcp -update -snapshotDiff "${old_snapshot}" "${new_snapshot}" "${SRC_FS}${picked_dir}" "$picked_dir" 2>&1 | tee "logs/$log_file"
+
+hadoop distcp -update -diff "${old_snapshot}" "${new_snapshot}" "${SRC_FS}${picked_dir}" "$picked_dir" 2>&1 | tee "logs/$log_file"
 distcp_status=$?
 
 
